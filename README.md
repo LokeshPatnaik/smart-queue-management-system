@@ -22,21 +22,25 @@ Reduce physical waiting, improve queue visibility, and help staff manage custome
 
 **Smart Queue Management System** is a full-stack web application designed for banking environments where customers traditionally wait in physical queues.
 
-The system allows customers to:
+The system provides a digital queue experience where customers can reserve their place remotely, receive a queue token, and monitor their progress while bank staff manage the queue through a dedicated dashboard.
+
+### 👤 Customers can
 
 - Register and securely log in
 - Select a banking service
 - Generate a digital queue token
-- View their position in the queue
-- View an estimated waiting time
+- View their queue position
+- View estimated waiting time
+- Track ticket status
 
-Bank staff can:
+### 👨‍💼 Staff can
 
 - Log in through a dedicated staff interface
-- View customers waiting in the queue
+- View waiting customers
+- Monitor queue statistics
 - Call the next customer
-- Mark customers as completed
-- Monitor the current queue status
+- Manage customers currently being served
+- Complete customer service
 
 The project combines a **React frontend**, **Spring Boot REST backend**, **PostgreSQL database**, and **JWT-based authentication**.
 
@@ -50,35 +54,36 @@ Traditional banking queues can result in:
 - Unclear queue positions
 - Difficulty monitoring customer flow
 - Inefficient manual queue management
+- Poor visibility into service progress
 
-This project provides a digital alternative where customers receive a token and can monitor their queue progress while staff manage the queue through a dedicated dashboard.
+This project provides a digital alternative where customers receive a queue token and can monitor their progress while staff manage the queue through a dedicated dashboard.
 
 ---
 
 # ✨ Key Features
 
-### 👤 Customer
+## 👤 Customer
 
 - Customer registration
 - Customer login
 - JWT authentication
 - Banking service selection
-- Digital token generation
+- Digital queue token generation
 - Queue position tracking
 - Estimated waiting time
 - Ticket status tracking
 
-### 👨‍💼 Staff
+## 👨‍💼 Staff
 
 - Dedicated staff login
 - Staff dashboard
 - Waiting queue visualization
+- Queue statistics
 - Call Next customer
 - Serving status
 - Complete customer service
-- Queue statistics
 
-### 🔐 Security
+## 🔐 Security
 
 - JWT-based authentication
 - Role-based authorization
