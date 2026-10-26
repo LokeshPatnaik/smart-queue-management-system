@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 function CustomerLogin({ onLogin }) {
@@ -13,75 +14,65 @@ function CustomerLogin({ onLogin }) {
         setLoading(true);
 
         try {
-            const response = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                body: JSON.stringify({
-                    email,
-                    password,
-                }),
-            });
+            const response = await fetch(
+                "https://smartqueue-u108.onrender.com/api/auth/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                    }),
+                }
+            );
 
             const responseText = await response.text();
 
             console.log("LOGIN STATUS:", response.status);
             console.log("LOGIN RESPONSE:", responseText);
 
-            if (!response.ok) {
-                let errorMessage = "Invalid email or password";
+            let data = {};
 
-                if (responseText) {
-                    try {
-                        const errorData = JSON.parse(responseText);
-                        errorMessage =
-                            errorData.message ||
-                            errorData.error ||
-                            responseText;
-                    } catch {
-                        errorMessage = responseText;
+            if (responseText) {
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    if (response.ok) {
+                        throw new Error(
+                            "Server returned an invalid login response."
+                        );
                     }
                 }
-
-                throw new Error(errorMessage);
             }
 
-            if (!responseText) {
+            if (!response.ok) {
                 throw new Error(
-                    "Server returned an empty response."
-                );
-            }
-
-            let data;
-
-            try {
-                data = JSON.parse(responseText);
-            } catch {
-                throw new Error(
-                    "Server returned an invalid login response."
+                    data.message ||
+                    data.error ||
+                    "Login failed. Check your email and password."
                 );
             }
 
             if (!data.token) {
                 throw new Error(
-                    "Login succeeded but no authentication token was returned."
+                    "No authentication token received from the server."
                 );
             }
 
-            localStorage.setItem(
-                "customerToken",
-                data.token
-            );
-
+            localStorage.setItem("customerToken", data.token);
             onLogin(data.token);
 
         } catch (error) {
             console.error("CUSTOMER LOGIN ERROR:", error);
 
-            setError(error.message);
-
+            setError(
+                error.message === "Failed to fetch"
+                    ? "Unable to connect to the server. Check the backend connection and CORS settings."
+                    : error.message
+            );
         } finally {
             setLoading(false);
         }
@@ -89,20 +80,14 @@ function CustomerLogin({ onLogin }) {
 
     return (
         <main className="staff-login-page">
-
             <div className="staff-login-card">
-
-                <div className="staff-login-icon">
-                    S
-                </div>
+                <div className="staff-login-icon">S</div>
 
                 <div className="eyebrow">
                     CUSTOMER ACCESS
                 </div>
 
-                <h1>
-                    Customer Login
-                </h1>
+                <h1>Customer Login</h1>
 
                 <p>
                     Sign in to reserve your place in the
@@ -110,12 +95,8 @@ function CustomerLogin({ onLogin }) {
                 </p>
 
                 <form onSubmit={handleLogin}>
-
                     <div className="input-group">
-
-                        <label>
-                            Email
-                        </label>
+                        <label>Email</label>
 
                         <input
                             type="email"
@@ -126,14 +107,10 @@ function CustomerLogin({ onLogin }) {
                             }
                             required
                         />
-
                     </div>
 
                     <div className="input-group">
-
-                        <label>
-                            Password
-                        </label>
+                        <label>Password</label>
 
                         <input
                             type="password"
@@ -144,7 +121,6 @@ function CustomerLogin({ onLogin }) {
                             }
                             required
                         />
-
                     </div>
 
                     {error && (
@@ -158,15 +134,10 @@ function CustomerLogin({ onLogin }) {
                         className="staff-login-button"
                         disabled={loading}
                     >
-                        {loading
-                            ? "Signing in..."
-                            : "Sign In"}
+                        {loading ? "Signing in..." : "Sign In"}
                     </button>
-
                 </form>
-
             </div>
-
         </main>
     );
 }
