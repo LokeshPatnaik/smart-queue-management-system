@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const API = "";
+const API = "https://smartqueue-u108.onrender.com";
 
 function StaffDashboard({ services, token, onLogout }) {
 
