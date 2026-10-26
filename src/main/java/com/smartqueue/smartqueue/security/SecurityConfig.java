@@ -1,4 +1,5 @@
 package com.smartqueue.smartqueue.security;
+import jakarta.servlet.DispatcherType;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
