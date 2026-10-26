@@ -1,6 +1,6 @@
 package com.smartqueue.smartqueue.security;
-import jakarta.servlet.DispatcherType;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +22,6 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter) {
-
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -35,14 +34,12 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration)
             throws Exception {
-
         return configuration.getAuthenticationManager();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http)
-            throws Exception {
+            HttpSecurity http) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -55,11 +52,15 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        // Allow internal error handling
+                        .dispatcherTypeMatchers(DispatcherType.ERROR)
+                        .permitAll()
+
                         // Login and registration
                         .requestMatchers("/api/auth/**")
                         .permitAll()
 
-                        // Customers need to see available services
+                        // Customers can view available services
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/services"
