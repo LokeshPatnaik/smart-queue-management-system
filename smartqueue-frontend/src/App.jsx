@@ -5,7 +5,7 @@ import StaffLogin from "./components/StaffLogin";
 import CustomerLogin from "./components/CustomerLogin";
 import "./App.css";
 
-const API = "";
+const API = "https://smartqueue-u108.onrender.com";
 
 const fallbackServices = [
   {
