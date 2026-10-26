@@ -1,13 +1,17 @@
+
 package com.smartqueue.smartqueue.security;
 
 import com.smartqueue.smartqueue.dto.LoginRequest;
 import com.smartqueue.smartqueue.dto.RegisterRequest;
 import com.smartqueue.smartqueue.model.User;
 import com.smartqueue.smartqueue.repository.UserRepository;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
@@ -29,23 +33,19 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
+    @Transactional
     public String register(RegisterRequest request) {
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already registered");
+        String email = normalizeEmail(request.getEmail());
+
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email already registered");
         }
 
         User user = new User();
-
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-
-        // Never store the plain password
-        user.setPassword(
-                passwordEncoder.encode(request.getPassword())
-        );
-
-        // Normal registration always creates a customer
+        user.setName(request.getName().trim());
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("CUSTOMER");
 
         userRepository.save(user);
@@ -55,24 +55,34 @@ public class AuthService {
 
     public String login(LoginRequest request) {
 
+        String email = normalizeEmail(request.getEmail());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
+                        email,
                         request.getPassword()
                 )
         );
 
-        var userDetails = userRepository
-                .findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new IllegalArgumentException("User not found"));
 
-        return jwtService.generateToken(
+        UserDetails userDetails =
                 org.springframework.security.core.userdetails.User
-                        .withUsername(userDetails.getEmail())
-                        .password(userDetails.getPassword())
-                        .authorities("ROLE_" + userDetails.getRole())
-                        .build()
-        );
+                        .withUsername(user.getEmail())
+                        .password(user.getPassword())
+                        .authorities("ROLE_" + user.getRole())
+                        .build();
+
+        return jwtService.generateToken(userDetails);
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+
+        return email.trim().toLowerCase(java.util.Locale.ROOT);
     }
 }
