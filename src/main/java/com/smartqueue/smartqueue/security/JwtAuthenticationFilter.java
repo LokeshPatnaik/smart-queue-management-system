@@ -1,3 +1,4 @@
+
 package com.smartqueue.smartqueue.security;
 
 import jakarta.servlet.FilterChain;
@@ -23,9 +24,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public JwtAuthenticationFilter(
             JwtService jwtService,
             CustomUserDetailsService userDetailsService) {
-
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        // Skip JWT filtering for public authentication endpoints
+        if (path.startsWith("/api/auth/")) {
+            return true;
+        }
+
+        // CORS preflight requests must pass through without JWT checks
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 
     @Override
@@ -35,88 +48,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String requestPath = request.getRequestURI();
+        String authHeader = request.getHeader("Authorization");
 
-        String authHeader =
-                request.getHeader("Authorization");
-
-        System.out.println(
-                "JWT FILTER → " +
-                        request.getMethod() +
-                        " " +
-                        requestPath
-        );
-
-        // No JWT provided
-        if (authHeader == null ||
-                !authHeader.startsWith("Bearer ")) {
-
-            System.out.println(
-                    "JWT FILTER → No Bearer token"
-            );
-
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
 
-        String email;
-
         try {
+            String email = jwtService.extractUsername(token);
 
-            email = jwtService.extractUsername(token);
-
-            System.out.println(
-                    "JWT FILTER → Token belongs to: " +
-                            email
-            );
-
-        } catch (Exception e) {
-
-            System.out.println(
-                    "JWT FILTER → Token extraction FAILED: " +
-                            e.getMessage()
-            );
-
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (email != null &&
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication() == null) {
-
-            try {
+            if (email != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 UserDetails userDetails =
-                        userDetailsService
-                                .loadUserByUsername(email);
+                        userDetailsService.loadUserByUsername(email);
 
-                System.out.println(
-                        "JWT FILTER → User found: " +
-                                userDetails.getUsername()
-                );
-
-                System.out.println(
-                        "JWT FILTER → Authorities: " +
-                                userDetails.getAuthorities()
-                );
-
-                boolean valid =
-                        jwtService.isTokenValid(
-                                token,
-                                userDetails
-                        );
-
-                System.out.println(
-                        "JWT FILTER → Token valid: " +
-                                valid
-                );
-
-                if (valid) {
-
+                if (jwtService.isTokenValid(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
@@ -129,24 +79,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     .buildDetails(request)
                     );
 
-                    SecurityContextHolder
-                            .getContext()
-                            .setAuthentication(
-                                    authentication
-                            );
-
-                    System.out.println(
-                            "JWT FILTER → Authentication SUCCESS"
-                    );
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authentication);
                 }
-
-            } catch (Exception e) {
-
-                System.out.println(
-                        "JWT FILTER → Authentication FAILED: " +
-                                e.getMessage()
-                );
             }
+        } catch (Exception e) {
+            // Invalid tokens do not establish authentication.
+            // Protected endpoints will still require valid authentication.
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
