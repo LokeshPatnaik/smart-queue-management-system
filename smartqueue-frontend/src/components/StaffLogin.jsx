@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 function StaffLogin({ onLogin }) {
@@ -13,29 +14,64 @@ function StaffLogin({ onLogin }) {
         setLoading(true);
 
         try {
-            const response = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    email,
-                    password,
-                }),
-            });
+            const response = await fetch(
+                "https://smartqueue-u108.onrender.com/api/auth/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                    }),
+                }
+            );
 
-            const data = await response.json();
+            const responseText = await response.text();
+            console.log("STAFF LOGIN STATUS:", response.status);
+            console.log("STAFF LOGIN RESPONSE:", responseText);
+
+            let data = {};
+
+            if (responseText) {
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    if (response.ok) {
+                        throw new Error(
+                            "Server returned an invalid login response."
+                        );
+                    }
+                }
+            }
 
             if (!response.ok) {
-                throw new Error(data.message || "Invalid email or password");
+                throw new Error(
+                    data.message ||
+                    data.error ||
+                    "Login failed. Check your email and password."
+                );
+            }
+
+            if (!data.token) {
+                throw new Error(
+                    "No authentication token received from the server."
+                );
             }
 
             localStorage.setItem("staffToken", data.token);
-
             onLogin(data.token);
 
         } catch (error) {
-            setError(error.message);
+            console.error("STAFF LOGIN ERROR:", error);
+
+            setError(
+                error.message === "Failed to fetch"
+                    ? "Unable to connect to the server. Check the backend connection and CORS settings."
+                    : error.message
+            );
         } finally {
             setLoading(false);
         }
@@ -43,9 +79,7 @@ function StaffLogin({ onLogin }) {
 
     return (
         <main className="staff-login-page">
-
             <div className="staff-login-card">
-
                 <div className="staff-login-icon">
                     S
                 </div>
@@ -61,7 +95,6 @@ function StaffLogin({ onLogin }) {
                 </p>
 
                 <form onSubmit={handleLogin}>
-
                     <div className="input-group">
                         <label>Email</label>
 
@@ -99,11 +132,8 @@ function StaffLogin({ onLogin }) {
                     >
                         {loading ? "Signing in..." : "Sign In"}
                     </button>
-
                 </form>
-
             </div>
-
         </main>
     );
 }
